@@ -1,4 +1,4 @@
-JIRAs Scheduler
+JIRA Scheduler
 ===============
 
 Given a bunch of JIRA tasks for the sprint, the JIRA-Scheduler generates a plan for the next two weeks saying what tasks should be done first given the priority, duration, owner and which tasks block the ones you are doing.
