@@ -54,4 +54,8 @@ sprintDay0 = SprintDay [task1, task2, task3];
 sprintPlan = JIRAScheduler sprintDay0;
 ```
 
+###Some observations
+
+* It is assumed that the attributes are always given in the Tasks, i.e.: no empty owners, nor duration.
+* It is assumed we have NO cycles betwen the JIRAs 'blocked by' chain, i.e.: no A blocked by B and B blocked by A, directly or not.
 
