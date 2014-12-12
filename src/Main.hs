@@ -38,38 +38,43 @@ task1 = Task
             (Duration 12)
             (BlockedBy [])
             (Highest)
-            (StartHour 0);
+            (StartHour 22);
 task2 = Task 
             (Id "ITBA-2")
             (Owner "Pablo")
             (Duration 3)
             (BlockedBy [task1])
             (Highest)
-            (StartHour 0);
+            (StartHour 22);
 task3 = Task 
             (Id "ITBA-3")
             (Owner "Juan")
             (Duration 6)
             (BlockedBy [task1,task2])
             (Highest)
-            (StartHour 0);
+            (StartHour 22);
 
 -- randomizeTask :: Task -> Task
 randomizeTask (Task (Id id) (Owner o) (Duration d) (BlockedBy []) p _) = Task (Id id) (Owner o) (Duration d) (BlockedBy []) p (StartHour 0);
-randomizeTask (Task (Id id) (Owner o) (Duration d) (BlockedBy (x:xs)) p _) = Task (Id id) (Owner o) (Duration d) (BlockedBy (x:xs)) p (StartHour 12); -- this should be randomHour
+randomizeTask (Task (Id id) (Owner o) (Duration d) (BlockedBy (x:xs)) p _) = Task (Id id) (Owner o) (Duration d) (BlockedBy (x:xs)) p (StartHour 0); -- this should be randomHour
 
 -- genRandomTasks :: Backlog -> Backlog;
-genRandomTasks (Backlog tasks) = Backlog (map randomizeTask tasks);
+genRandomBacklog (Backlog tasks) = Backlog (map randomizeTask tasks);
 
-ans = genRandomTasks (Backlog [task1, task2, task3])
+-- merge :: [a] -> [a] -> [a]; -- Merges the list mixing between odds and even elements from each list
+merge [] l = l;
+merge l [] = l;
+merge (x:xs) (y:yx) = x : merge yx xs; 
 
+-- crossBacklogs :: Backlog -> Backlog -> Backlog
+crossBacklogs (Backlog tasks1) (Backlog tasks2) = merge tasks1 tasks2;
 
-main = do  
-      print "JIRA Scheduler v1.0"
-      print ans 
---JIRAScheduler backlog = runGA (genRandomTasks backlog) taskFitness crossTasks;
+-- backlog = runGA (genRandomTasks backlog) taskFitness crossTasks;
 
 -- Execute the JIRA scheduler and the tasks will have now the start hour property set as it should be
 -- JIRAScheduler :: Backlog -> Backlog
 --scheduledBacklog = JIRAScheduler (Backlog [task1, task2, task3]);
 
+main = do  
+      print "JIRA Scheduler v1.0"
+      print (crossBacklogs (genRandomBacklog (Backlog [task1, task2, task3])) (Backlog [task1, task2, task3]))
