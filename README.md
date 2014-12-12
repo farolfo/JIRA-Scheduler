@@ -10,32 +10,36 @@ This project is being done in Haskel to be used as a final project for the Funct
 
 ```haskell
 -- A Task properties
+data Id = Id String;                                    -- The identifier of the JIRA task
 data Owner = Owner String;                              -- The owner of the JIRA
 data Duration = Duration Integer;                       -- The duration in hours that the task will require to be developed
 data BlockedBy = BlockedBy [Task];                      -- All the tasks that are blocking the development of this one
 data Priority = Highest | High | Medium | Low | Lowest; -- The priority of this task
-data StartHour = StartHour Integer;                               -- Hour from the begining of the sprint when the task should start
+data StartHour = StartHour Integer;                     -- Hour from the begining of the sprint when the task should start
 
 -- A JIRA task
-data Task = Task Owner Duration BlockedBy Priority StartHour;
+data Task = Task Id Owner Duration BlockedBy Priority StartHour;
 
 -- A backlog, jsut a bunch of JIRAs
 data Backlog = Backlog [Task];
 
 -- Initialize the JIRA tasks you want to do in the sprint
 task1 = Task 
+            (Id "ITBA-1")
             (Owner "Pablo")
             (Duration 12)
             (BlockedBy [])
             (Highest)
             (StartHour 0);
 task2 = Task 
+            (Id "ITBA-2")
             (Owner "Pablo")
             (Duration 3)
             (BlockedBy [task1])
             (Highest)
             (StartHour 0);
 task3 = Task 
+            (Id "ITBA-3")
             (Owner "Juan")
             (Duration 6)
             (BlockedBy [task1,task2])
