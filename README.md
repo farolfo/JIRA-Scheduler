@@ -11,47 +11,43 @@ This project is being done in Haskel to be used as a final project for the Funct
 ```haskell
 -- A Task properties
 data Owner = Owner String;                              -- The owner of the JIRA
-data Duration = Duration Integer;                       -- The duration in hours that the task will require to go 
-                                                         -- from OPEN to DONE.
-data BlockedBy = BlockedBy [Task];                      -- All the tasks that are blocking the development of this one.
-data Priority = Highest | High | Medium | Low | Lowest; -- The priority of this task.
-data State = Open | Done;                               -- The state of the task. (Not taking into account QA phase)
+data Duration = Duration Integer;                       -- The duration in hours that the task will require to be developed
+data BlockedBy = BlockedBy [Task];                      -- All the tasks that are blocking the development of this one
+data Priority = Highest | High | Medium | Low | Lowest; -- The priority of this task
+data StartHour = StartHour Integer;                               -- Hour from the begining of the sprint when the task should start
 
 -- A JIRA task
-data Task = Task Owner Duration BlockedBy Priority State;
+data Task = Task Owner Duration BlockedBy Priority StartHour;
 
--- A sprint day. A snapshot of how the tasks should be at the end of the day.
-data SprintDay = SprintDay [Task];
+-- A backlog, jsut a bunch of JIRAs
+data Backlog = Backlog [Task];
 
--- A sprint plan. The schedule with a snapshot of how each task should be at the end of each day.
-data SprintPlan = SprintPlan [SprintDay];
-
--- Initialize the JIRA tasks you want to do in the sprint.
+-- Initialize the JIRA tasks you want to do in the sprint
 task1 = Task 
             (Owner "Pablo")
             (Duration 12)
             (BlockedBy [])
             (Highest)
-            (Open);
+            (StartHour 0);
 task2 = Task 
             (Owner "Pablo")
             (Duration 3)
             (BlockedBy [task1])
             (Highest)
-            (Open);
+            (StartHour 0);
 task3 = Task 
             (Owner "Juan")
             (Duration 6)
             (BlockedBy [task1,task2])
             (Highest)
-            (Open);
+            (StartHour 0);
 
--- Put the JIRAs in an initial sprint day
-sprintDay0 = SprintDay [task1, task2, task3];
+-- Put the JIRAs in the backlog
+backlog = Backlog [task1, task2, task3];
 
--- Execute the JIRA scheduler and you will have your sprint plan
--- JIRAScheduler :: SprintDay -> SprintPlan
-sprintPlan = JIRAScheduler sprintDay0;
+-- Execute the JIRA scheduler and the tasks will have now the start hour property set as it should be
+-- JIRAScheduler :: Backlog -> Backlog
+scheduledBacklog = JIRAScheduler backlog;
 ```
 
 ###Some observations
