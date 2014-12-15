@@ -54,6 +54,15 @@ task3 = Task
             (Highest)
             (StartHour 22);
 
+-- getOwner :: Task -> String
+getOwner (Task _ (Owner o) _ _ _ _) = o;
+
+-- getId :: Task -> String
+getId (Task (Id id) _ _ _ _ _) = id;
+
+-- overlapTime :: Task -> Task -> Bool
+overlapTime (Task _ _ (Duration d1) _ _ (StartHour sh1) (Task _ _ (Duration d2) _ _ (StartHour sh2) = (sh2 < (sh1+d1)) && (sh1 < sh2+d2);
+
 -- randomizeTask :: Task -> Task
 randomizeTask (Task (Id id) (Owner o) (Duration d) (BlockedBy []) p _) = Task (Id id) (Owner o) (Duration d) (BlockedBy []) p (StartHour 0);
 randomizeTask (Task (Id id) (Owner o) (Duration d) (BlockedBy (x:xs)) p _) = Task (Id id) (Owner o) (Duration d) (BlockedBy (x:xs)) p (StartHour 0); -- this should be randomHour
@@ -68,6 +77,18 @@ merge (x:xs) (y:yx) = x : merge yx xs;
 
 -- crossBacklogs :: Backlog -> Backlog -> Backlog
 crossBacklogs (Backlog tasks1) (Backlog tasks2) = merge tasks1 tasks2;
+
+-- hasOverlappedTasks :: Backlog -> Bool
+hasOverlappedTasks (Backlog []) = False;
+hasOverlappedTasks (Backlog tasks) = [ (y,x) | y <- tasks, x <- tasks, (getId x) /= (getId y), (getOwner x) == (getOwner y), (overlapTime x y)] /= [];
+
+-- backlogFitness :: Backlog -> Integer
+backlogFitness (Backlog tasks) = 
+      if ( hasOverlappedTasts tasks ) 
+            then 0
+            else if ( not ( respectsBlockingTasks tasks ) )
+                  then 0
+                  else backlogHeuristic tasks;
 
 -- backlog = runGA (genRandomTasks backlog) taskFitness crossTasks;
 
