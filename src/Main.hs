@@ -61,7 +61,7 @@ getOwner (Task _ (Owner o) _ _ _ _) = o;
 getId (Task (Id id) _ _ _ _ _) = id;
 
 -- overlapTime :: Task -> Task -> Bool
-overlapTime (Task _ _ (Duration d1) _ _ (StartHour sh1) (Task _ _ (Duration d2) _ _ (StartHour sh2) = (sh2 < (sh1+d1)) && (sh1 < sh2+d2);
+overlapTime (Task _ _ (Duration d1) _ _ (StartHour sh1)) (Task _ _ (Duration d2) _ _ (StartHour sh2)) = (sh2 < (sh1+d1)) && (sh1 < sh2+d2);
 
 -- randomizeTask :: Task -> Task
 randomizeTask (Task (Id id) (Owner o) (Duration d) (BlockedBy []) p _) = Task (Id id) (Owner o) (Duration d) (BlockedBy []) p (StartHour 0);
@@ -78,9 +78,20 @@ merge (x:xs) (y:yx) = x : merge yx xs;
 -- crossBacklogs :: Backlog -> Backlog -> Backlog
 crossBacklogs (Backlog tasks1) (Backlog tasks2) = merge tasks1 tasks2;
 
--- hasOverlappedTasks :: Backlog -> Bool
-hasOverlappedTasks (Backlog []) = False;
-hasOverlappedTasks (Backlog tasks) = [ (y,x) | y <- tasks, x <- tasks, (getId x) /= (getId y), (getOwner x) == (getOwner y), (overlapTime x y)] /= [];
+-- hasOverlappedTasks :: [Task] -> Bool
+hasOverlappedTasks [] = False;
+hasOverlappedTasks tasks = [ (y,x) | y <- tasks, x <- tasks, (getId x) /= (getId y), (getOwner x) == (getOwner y), (overlapTime x y)] /= [];
+
+-- checkStartHour :: [Tasks] -> Integer -> Bool
+checkStartHour [] _ = True;
+checkStartHour ((Task _ _ (Duration d) _ _ (StartHour sh)):xs) time = if ( time < sh + d ) then False else (checkStartHour xs);
+
+-- respectsBlockingTasks :: a -> Bool
+respectsBlockingTasks [] = True;
+respectsBlockingTasks (x:xs) = if ( respectsBlockingTasks x ) then (respectsBlockingTasks xs) else False;
+
+respectsBlockingTasks (Task _ _ _ (BlockedBy []) _ _) = True;
+respectsBlockingTasks (Task _ _ _ (BlockedBy tasks) _ (StartHour sh)) = checkStartHour tasks sh;
 
 -- backlogFitness :: Backlog -> Integer
 backlogFitness (Backlog tasks) = 
