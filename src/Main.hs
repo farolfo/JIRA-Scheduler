@@ -12,6 +12,10 @@ data Task = Task Id Owner Duration BlockedBy Priority StartHour;
 -- A backlog, jsut a bunch of JIRAs
 data Backlog = Backlog [Task];
 
+instance Eq Task where
+   (Task (Id id1) _ _ _ _ _ ) == (Task (Id id2) _ _ _ _ _ ) = (id1 == id2)
+   (Task (Id id1) _ _ _ _ _ ) /= (Task (Id id2) _ _ _ _ _ ) = (id1 /= id2)
+
 instance Show Priority where
       show Highest = show "Highest"
       show High = show "High"
@@ -30,29 +34,6 @@ instance Show Task where
 instance Show Backlog where
       show (Backlog []) = show ""
       show (Backlog (task:xs)) = show task ++ "," ++ show (Backlog xs) 
-
--- Initialize the JIRA tasks you want to do in the sprint
-task1 = Task 
-            (Id "ITBA-1")
-            (Owner "Pablo")
-            (Duration 12)
-            (BlockedBy [])
-            (Highest)
-            (StartHour 22);
-task2 = Task 
-            (Id "ITBA-2")
-            (Owner "Pablo")
-            (Duration 3)
-            (BlockedBy [task1])
-            (Highest)
-            (StartHour 22);
-task3 = Task 
-            (Id "ITBA-3")
-            (Owner "Juan")
-            (Duration 6)
-            (BlockedBy [task1,task2])
-            (Highest)
-            (StartHour 22);
 
 -- getOwner :: Task -> String
 getOwner (Task _ (Owner o) _ _ _ _) = o;
@@ -84,29 +65,66 @@ hasOverlappedTasks tasks = [ (y,x) | y <- tasks, x <- tasks, (getId x) /= (getId
 
 -- checkStartHour :: [Tasks] -> Integer -> Bool
 checkStartHour [] _ = True;
-checkStartHour ((Task _ _ (Duration d) _ _ (StartHour sh)):xs) time = if ( time < sh + d ) then False else (checkStartHour xs);
+checkStartHour ((Task _ _ (Duration d) _ _ (StartHour sh)):xs) time = if ( time < (sh + d) ) then False else (checkStartHour xs time);
 
 -- respectsBlockingTasks :: a -> Bool
 respectsBlockingTasks [] = True;
-respectsBlockingTasks (x:xs) = if ( respectsBlockingTasks x ) then (respectsBlockingTasks xs) else False;
+respectsBlockingTasks (x:xs) = if ( respectsBlockingTasksHelper x ) then (respectsBlockingTasks xs) else False;
 
-respectsBlockingTasks (Task _ _ _ (BlockedBy []) _ _) = True;
-respectsBlockingTasks (Task _ _ _ (BlockedBy tasks) _ (StartHour sh)) = checkStartHour tasks sh;
+respectsBlockingTasksHelper (Task _ _ _ (BlockedBy []) _ _) = True;
+respectsBlockingTasksHelper (Task _ _ _ (BlockedBy tasks) _ (StartHour sh)) = checkStartHour tasks sh;
 
 -- backlogFitness :: Backlog -> Integer
 backlogFitness (Backlog tasks) = 
-      if ( hasOverlappedTasts tasks ) 
+      if ( hasOverlappedTasks tasks ) 
             then 0
             else if ( not ( respectsBlockingTasks tasks ) )
                   then 0
-                  else backlogHeuristic tasks;
+                  else 1;
 
--- backlog = runGA (genRandomTasks backlog) taskFitness crossTasks;
+--- runGA (genRandomTasks backlog) taskFitness crossTasks;
 
 -- Execute the JIRA scheduler and the tasks will have now the start hour property set as it should be
 -- JIRAScheduler :: Backlog -> Backlog
 --scheduledBacklog = JIRAScheduler (Backlog [task1, task2, task3]);
 
+-- Initialize the JIRA tasks you want to do in the sprint
+task1 = Task 
+            (Id "ITBA-1")
+            (Owner "Pablo")
+            (Duration 12)
+            (BlockedBy [])
+            (Highest)
+            (StartHour 0);
+task2 = Task 
+            (Id "ITBA-2")
+            (Owner "Pablo")
+            (Duration 32)
+            (BlockedBy [task1])
+            (Highest)
+            (StartHour 13);
+task3 = Task 
+            (Id "ITBA-3")
+            (Owner "Juan")
+            (Duration 6)
+            (BlockedBy [task1,task2])
+            (Highest)
+            (StartHour 22);
+taskOverlapped = Task 
+            (Id "ITBA-123")
+            (Owner "Juan")
+            (Duration 6)
+            (BlockedBy [task1,task2])
+            (Highest)
+            (StartHour 6);
+
+-- Task tests
+overlapTimeTest1 = if ( not ( overlapTime task1 task2 ) ) then "overlapTimeTest1: OK" else "overlapTimeTest1: Fail"; 
+overlapTimeTest2 = if ( overlapTime task1 taskOverlapped ) then "overlapTimeTest2: OK" else "overlapTimeTest2: Fail"; 
+
+
 main = do  
       print "JIRA Scheduler v1.0"
-      print (crossBacklogs (genRandomBacklog (Backlog [task1, task2, task3])) (Backlog [task1, task2, task3]))
+      print "Running tests"
+      print overlapTimeTest1
+      print overlapTimeTest2
