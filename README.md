@@ -3,10 +3,9 @@ JIRA Scheduler
 
 Given a bunch of JIRA tasks for the sprint, the JIRA-Scheduler generates a plan for the next two weeks saying what tasks should be done first given the priority, duration, owner and which tasks block the ones you are doing.
 
-The algorithm to be used for scheduleing the tasks will be simulated anealing or genetic algorithms, TBD.
+The core for this shceduling problem solver is a genetic algorithm.
 
-This project is being done in Haskel to be used as a final project for the Functional Programming subject at ITBA.
-
+This project is written in Haskel and used as a final project for the Functional Programming subject at ITBA.
 
 ```haskell
 data Priority = Highest | High | Medium | Low | Lowest deriving (Show); 
