@@ -1,52 +1,45 @@
--- A Task properties
-data Id = Id String;                                    -- The identifier of the JIRA task
-data Owner = Owner String;                              -- The owner of the JIRA
-data Duration = Duration Integer;                       -- The duration in hours that the task will require to be developed
-data BlockedBy = BlockedBy [Task];                      -- All the tasks that are blocking the development of this one
-data Priority = Highest | High | Medium | Low | Lowest; -- The priority of this task
-data StartHour = StartHour Integer;                     -- Hour from the begining of the sprint when the task should start
+data Priority = Highest | High | Medium | Low | Lowest deriving (Show); 
 
 -- A JIRA task
-data Task = Task Id Owner Duration BlockedBy Priority StartHour;
+data Task = Task {
+      id :: String,           -- The identifier of the JIRA task
+      owner :: String,        -- The owner of the JIRA
+      duration :: Integer,    -- The duration in hours that the task will require to be developed
+      blockedBy :: [Task],    -- All the tasks that are blocking the development of this one
+      priority :: Priority,   -- The priority of this task
+      startHour :: Integer    -- Hour from the begining of the sprint when the task should start
+} deriving (Show);
 
 -- A backlog, jsut a bunch of JIRAs
-data Backlog = Backlog [Task];
+data Backlog = Backlog [Task] deriving (Show);
+
+-- The chromosome, a proposed solution of our problem
+-- data Chromosome a = Chromosome a;
+
+-- The crossover combines two different chromosomes (solutions) into one new
+-- data Crossover = Crossover (A -> A -> A)
+
+-- The population, just a bunch of solutions
+
+-- GA Configuration
+-- data GA = GA Population Fitness Crossover Mutation CrossoverProb MutationProb EliteSelection;    
 
 instance Eq Task where
-   (Task (Id id1) _ _ _ _ _ ) == (Task (Id id2) _ _ _ _ _ ) = (id1 == id2)
-   (Task (Id id1) _ _ _ _ _ ) /= (Task (Id id2) _ _ _ _ _ ) = (id1 /= id2)
-
-instance Show Priority where
-      show Highest = show "Highest"
-      show High = show "High"
-      show Medium = show "Medium"
-      show Low = show "Low"
-      show Lowest = show "Lowest"
-
-instance Show BlockedBy where
-      show (BlockedBy []) = show ""
-      show (BlockedBy ((Task (Id id) _ _ _ _ _):xs)) = show id ++ "," ++ show (BlockedBy xs)
-
-instance Show Task where
-      show (Task (Id id) (Owner o) (Duration d) blockedBy prior (StartHour hour)) = 
-            show ("{id:" ++ show id ++ ",owner:" ++ show o ++ ",duration:" ++ show d ++ ",blockedBy:[" ++ show blockedBy ++ "],startHour:" ++ show hour ++ "}"); 
-
-instance Show Backlog where
-      show (Backlog []) = show ""
-      show (Backlog (task:xs)) = show task ++ "," ++ show (Backlog xs) 
+   (Task id1 _ _ _ _ _ ) == (Task id2 _ _ _ _ _ ) = (id1 == id2)
+   (Task id1 _ _ _ _ _ ) /= (Task id2 _ _ _ _ _ ) = (id1 /= id2)
 
 -- getOwner :: Task -> String
-getOwner (Task _ (Owner o) _ _ _ _) = o;
+getOwner (Task _ o _ _ _ _) = o;
 
 -- getId :: Task -> String
-getId (Task (Id id) _ _ _ _ _) = id;
+getId (Task id _ _ _ _ _) = id;
 
 -- overlapTime :: Task -> Task -> Bool
-overlapTime (Task _ _ (Duration d1) _ _ (StartHour sh1)) (Task _ _ (Duration d2) _ _ (StartHour sh2)) = (sh2 < (sh1+d1)) && (sh1 < sh2+d2);
+overlapTime (Task _ _ d1 _ _ sh1) (Task _ _ d2 _ _ sh2) = (sh2 < (sh1+d1)) && (sh1 < sh2+d2);
 
 -- randomizeTask :: Task -> Task
-randomizeTask (Task (Id id) (Owner o) (Duration d) (BlockedBy []) p _) = Task (Id id) (Owner o) (Duration d) (BlockedBy []) p (StartHour 0);
-randomizeTask (Task (Id id) (Owner o) (Duration d) (BlockedBy (x:xs)) p _) = Task (Id id) (Owner o) (Duration d) (BlockedBy (x:xs)) p (StartHour 0); -- this should be randomHour
+randomizeTask (Task id o d [] p _) = Task id o d [] p 0;
+randomizeTask (Task id o d (x:xs) p _) = Task id o d (x:xs) p 0; -- this should be randomHour
 
 -- genRandomTasks :: Backlog -> Backlog;
 genRandomBacklog (Backlog tasks) = Backlog (map randomizeTask tasks);
@@ -65,14 +58,14 @@ hasOverlappedTasks tasks = [ (y,x) | y <- tasks, x <- tasks, (getId x) /= (getId
 
 -- checkStartHour :: [Tasks] -> Integer -> Bool
 checkStartHour [] _ = True;
-checkStartHour ((Task _ _ (Duration d) _ _ (StartHour sh)):xs) time = if ( time < (sh + d) ) then False else (checkStartHour xs time);
+checkStartHour ((Task _ _ d _ _ sh):xs) time = if ( time < (sh + d) ) then False else (checkStartHour xs time);
 
--- respectsBlockingTasks :: a -> Bool
+-- respectsBlockingTasks :: [Task] -> Bool
 respectsBlockingTasks [] = True;
-respectsBlockingTasks (x:xs) = if ( respectsBlockingTasksHelper x ) then (respectsBlockingTasks xs) else False;
+respectsBlockingTasks (task:tasksLeft) = if ( respectsBlockingTasksHelper task ) then (respectsBlockingTasks tasksLeft) else False;
 
-respectsBlockingTasksHelper (Task _ _ _ (BlockedBy []) _ _) = True;
-respectsBlockingTasksHelper (Task _ _ _ (BlockedBy tasks) _ (StartHour sh)) = checkStartHour tasks sh;
+respectsBlockingTasksHelper (Task _ _ _ [] _ _) = True;
+respectsBlockingTasksHelper (Task _ _ _ tasks _ sh) = checkStartHour tasks sh;
 
 -- backlogFitness :: Backlog -> Integer
 backlogFitness (Backlog tasks) = 
@@ -82,49 +75,57 @@ backlogFitness (Backlog tasks) =
                   then 0
                   else 1;
 
---- runGA (genRandomTasks backlog) taskFitness crossTasks;
-
--- Execute the JIRA scheduler and the tasks will have now the start hour property set as it should be
--- JIRAScheduler :: Backlog -> Backlog
---scheduledBacklog = JIRAScheduler (Backlog [task1, task2, task3]);
-
 -- Initialize the JIRA tasks you want to do in the sprint
-task1 = Task 
-            (Id "ITBA-1")
-            (Owner "Pablo")
-            (Duration 12)
-            (BlockedBy [])
-            (Highest)
-            (StartHour 0);
-task2 = Task 
-            (Id "ITBA-2")
-            (Owner "Pablo")
-            (Duration 32)
-            (BlockedBy [task1])
-            (Highest)
-            (StartHour 13);
-task3 = Task 
-            (Id "ITBA-3")
-            (Owner "Juan")
-            (Duration 6)
-            (BlockedBy [task1,task2])
-            (Highest)
-            (StartHour 22);
-taskOverlapped = Task 
-            (Id "ITBA-123")
-            (Owner "Juan")
-            (Duration 6)
-            (BlockedBy [task1,task2])
-            (Highest)
-            (StartHour 6);
+task1 = Task "ITBA-1"
+            "Pablo"
+            12
+            []
+            Highest
+            0;
+task2 = Task "ITBA-2"
+            "Pablo"
+            32
+            [task1]
+            Highest
+            13;
+task3 = Task "ITBA-3"
+            "Juan"
+            6
+            [task1,task2]
+            Highest
+            22;
+taskOverlapped = Task "ITBA-123"
+            "Juan"
+            6
+            [task1,task2]
+            Highest
+            6;
+taskOverlappedPablo = Task "ITBA-123"
+            "Pablo"
+            6
+            [task1,task2]
+            Highest
+            6;
+ task4 = Task "ITBA-3"
+            "Juan"
+            6
+            [task1,task2]
+            Highest
+            46;           
 
--- Task tests
-overlapTimeTest1 = if ( not ( overlapTime task1 task2 ) ) then "overlapTimeTest1: OK" else "overlapTimeTest1: Fail"; 
-overlapTimeTest2 = if ( overlapTime task1 taskOverlapped ) then "overlapTimeTest2: OK" else "overlapTimeTest2: Fail"; 
-
+-- assert :: Bool -> String -> String
+assert test testName = if (test) then testName ++ ": OK" else testName ++ ": FAIL"
 
 main = do  
       print "JIRA Scheduler v1.0"
       print "Running tests"
-      print overlapTimeTest1
-      print overlapTimeTest2
+      print (assert (not ( overlapTime task1 task2 )) "OverlapTimeTest1")
+      print (assert (overlapTime task1 taskOverlapped) "OverlapTimeTest2")
+      print (assert (not (hasOverlappedTasks [task1,task2])) "HasOverlappedTasksTest1")
+      print (assert (not (hasOverlappedTasks [task1,taskOverlapped])) "HasOverlappedTasksTest2")
+      print (assert (hasOverlappedTasks [task1,taskOverlappedPablo]) "HasOverlappedTasksTest3")
+      print (assert (respectsBlockingTasks [task1,task2]) "RespectsBlockingTasksTest1")
+      print (assert (not (respectsBlockingTasks [task1,task2,task3])) "RespectsBlockingTasksTest2")
+      print (assert (respectsBlockingTasks [task1,task2,task4]) "RespectsBlockingTasksTest3")
+
+
