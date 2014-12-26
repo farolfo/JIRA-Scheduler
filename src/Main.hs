@@ -75,6 +75,14 @@ backlogFitness (Backlog tasks) =
                   then 0
                   else 1;
 
+--- runGA (genRandomTasks backlog) taskFitness crossTasks;
+
+-- Execute the JIRA scheduler and the tasks will have now the start hour property set as it should be
+-- JIRAScheduler :: Backlog -> Backlog
+--scheduledBacklog = JIRAScheduler (Backlog [task1, task2, task3]);
+
+
+
 -- Initialize the JIRA tasks you want to do in the sprint
 task1 = Task "ITBA-1"
             "Pablo"

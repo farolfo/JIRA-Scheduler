@@ -20,31 +20,34 @@ data StartHour = StartHour Integer;                     -- Hour from the beginin
 -- A JIRA task
 data Task = Task Id Owner Duration BlockedBy Priority StartHour;
 
--- A backlog, jsut a bunch of JIRAs
+-- A backlog, just a bunch of JIRAs
 data Backlog = Backlog [Task];
 
--- Initialize the JIRA tasks you want to do in the sprint
-task1 = Task 
-            (Id "ITBA-1")
-            (Owner "Pablo")
-            (Duration 12)
-            (BlockedBy [])
-            (Highest)
-            (StartHour 0);
-task2 = Task 
-            (Id "ITBA-2")
-            (Owner "Pablo")
-            (Duration 3)
-            (BlockedBy [task1])
-            (Highest)
-            (StartHour 0);
-task3 = Task 
-            (Id "ITBA-3")
-            (Owner "Juan")
-            (Duration 6)
-            (BlockedBy [task1,task2])
-            (Highest)
-            (StartHour 0);
+-- Initialize the JIRA tasks you want to do in the sprint, set whatever in the 'startHour field', we will fill that for you
+task1 = Task {
+      identifier="ITBA-1",
+      owner="Pablo",
+      duration=12,
+      blockedBy=[],
+      priority=Highest,
+      startHour=0
+};
+task2 = Task {
+      identifier="ITBA-2",
+      owner="Pablo",
+      duration=32,
+      blockedBy=[task1],
+      priority=Highest,
+      startHour=0
+};
+task1 = Task {
+      identifier="ITBA-3",
+      owner="Juan",
+      duration=6,
+      blockedBy=[task1,task2],
+      priority=Highest,
+      startHour=0
+};
 
 -- Put the JIRAs in the backlog
 backlog = Backlog [task1, task2, task3];
