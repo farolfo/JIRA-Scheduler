@@ -3,7 +3,7 @@ JIRA Scheduler
 
 Given a bunch of JIRA tasks for the sprint, the JIRA-Scheduler generates a plan for the next two weeks saying what tasks should be done first given the priority, duration, owner and which tasks block the ones you are doing.
 
-The core for this shceduling problem solver is a genethic algorithm.
+The core for this shceduling problem solver is a genetic algorithm.
 
 This project is written in Haskel and used as a final project for the Functional Programming subject at ITBA.
 
