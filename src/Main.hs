@@ -13,16 +13,19 @@ data Task = Task {
 -- A backlog, jsut a bunch of JIRAs
 data Backlog = Backlog [Task] deriving (Show);
 
--- The chromosome, a proposed solution of our problem
--- data Chromosome a = Chromosome a;
-
--- The crossover combines two different chromosomes (solutions) into one new
--- data Crossover = Crossover (A -> A -> A)
-
--- The population, just a bunch of solutions
+-- The chromosome, a proposed solution for our problem
+data Chromosome a = Chromosome a;
 
 -- GA Configuration
--- data GA = GA Population Fitness Crossover Mutation CrossoverProb MutationProb EliteSelection;    
+data GA a = GA {
+      population :: [Chromosome a],
+      fitness :: (Chromosome a) -> Integer,
+      crossover :: (Chromosome a) -> (Chromosome a) -> (Chromosome a),
+      crossoverProb :: Float,
+      mutation :: (Chromosome a) -> (Chromosome a),
+      mutationProb :: Float,
+      eliteLenght :: Integer
+};    
 
 instance Eq Task where
    (Task id1 _ _ _ _ _ ) == (Task id2 _ _ _ _ _ ) = (id1 == id2)
@@ -75,12 +78,26 @@ backlogFitness (Backlog tasks) =
                   then 0
                   else 1;
 
---- runGA (genRandomTasks backlog) taskFitness crossTasks;
+generationsAmount = 100;
 
--- Execute the JIRA scheduler and the tasks will have now the start hour property set as it should be
--- JIRAScheduler :: Backlog -> Backlog
---scheduledBacklog = JIRAScheduler (Backlog [task1, task2, task3]);
+runGA gAConfiguration = runGAHelper gAConfiguration generationsAmount;
 
+runGAHelper (GA population fitness _ _ _ _ _) 0 = 
+      let 
+            solutions = map (\chromosome -> (chromosome, fitness chromosome)) population,
+            bestFitness = max (map snd solutions)
+      in 
+            head (filter (\(chromosome,fitnessValue) -> fitnessValue == bestFitness) solutions);
+
+runGAHelper (GA population fitness crossover crossoverProb mutation mutationProb eliteLenght) generationNum = 
+      let
+            populationLength = length population,
+            solutions = map (\chromosome -> (chromosome, fitness chromosome)) population,
+            eliteSolutions = genEliteSolutions solutions eliteLenght, 
+            mutatedSolutions = genMutatedSolutions solutions mutation ((populationLength - eliteLenght) * mutationProb),
+            crossedSolutions = genCrossedSolutions solutions crossover ((populationLength - eliteLenght) * crossoverProb)
+      in
+            runGAHelper (GA (crossedSolutions ++ mutatedSolutions ++ eliteSolutions) fitness crossover crossoverProb mutation mutationProb eliteLenght) (generationNum - 1);
 
 
 -- Initialize the JIRA tasks you want to do in the sprint
