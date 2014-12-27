@@ -92,12 +92,12 @@ runGAHelper (GA population fitness _ _ _ _ _) 0 =
 runGAHelper (GA population fitness crossover crossoverProb mutation mutationProb eliteLenght) generationNum = 
       let
             populationLength = length population,
-            solutions = map (\chromosome -> (chromosome, fitness chromosome)) population,
-            eliteSolutions = genEliteSolutions solutions eliteLenght, 
+            solutions = sortBy (\(_,fit1) -> (_,fit2) -> compare fit2 fit1) (map (\chromosome -> (chromosome, fitness chromosome)) population),
+            eliteSolutions = take eliteLenght solutions, 
             mutatedSolutions = genMutatedSolutions solutions mutation ((populationLength - eliteLenght) * mutationProb),
             crossedSolutions = genCrossedSolutions solutions crossover ((populationLength - eliteLenght) * crossoverProb)
       in
-            runGAHelper (GA (crossedSolutions ++ mutatedSolutions ++ eliteSolutions) fitness crossover crossoverProb mutation mutationProb eliteLenght) (generationNum - 1);
+            runGAHelper (GA (map fst (crossedSolutions ++ mutatedSolutions ++ eliteSolutions)) fitness crossover crossoverProb mutation mutationProb eliteLenght) (generationNum - 1);
 
 
 -- Initialize the JIRA tasks you want to do in the sprint
