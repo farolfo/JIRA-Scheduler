@@ -82,6 +82,8 @@ generationsAmount = 100;
 
 runGA gAConfiguration = runGAHelper gAConfiguration generationsAmount;
 
+genMutatedSolutions solutions mutate mutationLenght = map (\(chrom,fit) -> (mutate chrom, fit)) (sample mutationLenght solutions);
+
 runGAHelper (GA population fitness _ _ _ _ _) 0 = 
       let 
             solutions = map (\chromosome -> (chromosome, fitness chromosome)) population,
