@@ -7,6 +7,16 @@ The core for this shceduling problem solver is a genetic algorithm.
 
 This project is written in Haskel and used as a final project for the Functional Programming subject at ITBA.
 
+###Install
+
+Install the ```random-extras``` package using cabal
+
+```
+cabal install random-extras
+```
+
+###Application overview
+
 ```haskell
 data Priority = Highest | High | Medium | Low | Lowest deriving (Show); 
 
