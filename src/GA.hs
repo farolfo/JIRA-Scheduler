@@ -1,40 +1,43 @@
+module GA where
+
 import Data.List(sortBy)
 
+data Chromosome a = Chromosome a deriving (Show)
+
+random :: (Fractional a, Ord a) => a
 random = 0.5
 
--- runGA :: [a] -> (a -> Integer) -> (Maybe Integer) -> (Maybe Integer) -> a
+runGA :: (Fractional a, Ord a) => [(Chromosome t)] -> ((Chromosome t) -> a) -> ((Chromosome t) -> (Chromosome t)) -> ((Chromosome t) -> (Chromosome t) -> (Chromosome t)) -> Int -> a -> (Maybe Int) -> (Maybe a) -> (Chromosome t)
 runGA randomPopulation fitness mutate crossover eliteCount mutationProb maxIterations acceptedFitnessValue =
   runGAHelper randomPopulation fitness mutate crossover eliteCount mutationProb 1 maxIterations acceptedFitnessValue
 
--- runGAHelper :: [a] -> (a -> Integer) -> (a -> a) -> Integer -> Float -> Integer -> (Maybe Integer) -> (Maybe Integer) -> a
+runGAHelper :: (Fractional a, Ord a) => [(Chromosome t)] -> ((Chromosome t) -> a) -> ((Chromosome t) -> (Chromosome t)) -> ((Chromosome t) -> (Chromosome t) -> (Chromosome t)) -> Int -> a -> Int -> (Maybe Int) -> (Maybe a) -> (Chromosome t)
 runGAHelper population fitness mutate crossover eliteCount mutationProb iteration maxIterations acceptedFitnessValue =
   let
-    valuedPopulation = (sortBy fitnessComparator) . map (\chromosome -> (chromosome, fitness chromosome)) population
-    newPopulation =
-      (takeFirst eliteCount) . map (\(x,_) -> x) valuedPopulation ++
-      (removeLast eliteCount) . (sortBy fitnessComparator) . map (\_ -> genChild valuedPopulation mutate crossover mutationProb) population
+    valuedPopulation = (sortBy fitnessComparator) ( map (\chromosome -> (chromosome, fitness chromosome)) population )
+    newPopulation = ((takeFirst eliteCount) ( map fst valuedPopulation )) ++ map fst ((removeLast eliteCount) ((sortBy fitnessComparator) ( map (\c -> (c, fitness c)) ( map (\_ -> genChild valuedPopulation mutate crossover mutationProb) population ) ) ) )
     bestChromosome = head newPopulation
     bestFitness = fitness bestChromosome
   in
     if (runOutOfIterations iteration maxIterations || fitnessIsAccepted bestFitness acceptedFitnessValue) then
       bestChromosome
     else
-      runGAHelper newPopulation fitness mutate crossover eliteCount mutationProb (iteration+1) maxIterations acceptedFitnessValue
+      runGAHelper newPopulation fitness mutate crossover eliteCount mutationProb (iteration + 1) maxIterations acceptedFitnessValue
 
 -- Must order decending
--- fitnessComparator :: ((a,Integer) -> (a,Integer) -> Ordering) -> [(a,Integer)] -> [(a,Integer)]
-fitnessComparator (_, v1) (_, v2)
+fitnessComparator :: (Fractional a, Ord a) => (Chromosome t, a) -> (Chromosome t, a) -> Ordering
+fitnessComparator (Chromosome x1, v1) (Chromosome x2, v2)
   | v1 > v2 = LT
   | v1 < v2 = GT
   | v1 == v2 = EQ
 
--- takeFirst :: Integer -> [a] -> [a]
+takeFirst :: Int -> [a] -> [a]
 takeFirst 0 _ = []
 takeFirst n [] = []
 takeFirst n (x:xs) = x:takeFirst (n-1) xs
 
--- removeLast :: Integer -> [a] -> [a]
-removeLast 0 _ = _
+removeLast :: Int -> [a] -> [a]
+removeLast 0 xs = xs
 removeLast n list =
   if (length list < n) then
     []
@@ -42,15 +45,15 @@ removeLast n list =
     takeFirst (length list - n) list
 
 -- valuedPopulation is a valued and ordered population
--- genChild :: [(a,Integer)] -> (a -> a) -> (a -> a -> a) -> Float -> a
+genChild :: (Fractional a, Ord a) => [((Chromosome t), a)] -> ((Chromosome t) -> (Chromosome t)) -> ((Chromosome t) -> (Chromosome t) -> (Chromosome t)) -> a -> (Chromosome t)
 genChild valuedPopulation mutate crossover mutationProb =
   let
     parent1 = getParent valuedPopulation
     parent2 = getParent valuedPopulation
   in
-    (mutateHelper mutate mutationProb) . crossover parent1 parent2
+    (mutateHelper mutate mutationProb) ( crossover parent1 parent2 ) -- use dot notation !
 
--- mutateHelper :: (a -> a) -> Float -> (a -> a)
+mutateHelper :: (Fractional a, Ord a) => ((Chromosome t) -> (Chromosome t)) -> a -> ((Chromosome t) -> (Chromosome t))
 mutateHelper mutate mutationProb =
   if (random < mutationProb) then
     mutate
@@ -58,28 +61,28 @@ mutateHelper mutate mutationProb =
     id
 
 -- valuedPopulation is a valued and ordered population
--- getParent :: [(a, Integer)] -> a
+getParent :: (Fractional a, Ord a) => [((Chromosome t), a)] -> (Chromosome t)
 getParent valuedPopulation =
-  (getParentWithProb random) . addCrossoverProb valuedPopulation
+  (getParentWithProb random) ( addCrossoverProb valuedPopulation ) -- use dot notation !!
 
--- addCrossoverProb :: [(a,Integer)] -> [(a,Integer,Float)]
+addCrossoverProb :: (Fractional a, Ord a) => [((Chromosome t), a)] -> [((Chromosome t), a, a)]
 addCrossoverProb valuedPopulation =
   let
-    fitSum = sum . map (\(x,y) -> y) valuedPopulation
+    fitSum = sum ( map snd valuedPopulation ) -- Use dot notation !!
   in
     map (\(chromosome, fitValue) -> (chromosome, fitValue, fitValue / fitSum)) valuedPopulation
 
--- getParentWithProb :: Float -> [(a,Integer,Float)] -> a
+getParentWithProb :: (Fractional a, Ord a) => a -> [((Chromosome t), a, a)] -> (Chromosome t)
 getParentWithProb prob ((c,_,cProb):xs) =
   if (prob <= cProb) then
     c
   else
     getParentWithProb (prob - cProb) xs
 
--- runOutOfIterations :: Integer -> (Maybe Integer) -> Bool
+runOutOfIterations :: Int -> (Maybe Int) -> Bool
 runOutOfIterations _ Nothing = False
 runOutOfIterations iteration (Just maxIterations) = maxIterations < iteration
 
--- fitnessIsAccepted :: Integer -> (Maybe Integer) -> Bool
+fitnessIsAccepted :: (Fractional a, Ord a) => a -> Maybe a -> Bool
 fitnessIsAccepted _ Nothing = False
 fitnessIsAccepted value (Just acceptedValue) = value >= acceptedValue
